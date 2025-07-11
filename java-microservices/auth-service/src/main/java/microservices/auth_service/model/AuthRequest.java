@@ -1,10 +1,8 @@
-package microservices.auth_service.dto;
+package microservices.auth_service.model;
 
-public class RegisterRequest {
+public class AuthRequest {
     private String username;
     private String password;
-
-    // getters e setters
 
     public String getUsername() {
         return username;
