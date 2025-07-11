@@ -23,8 +23,8 @@ public class JwtAuthenticationFilter implements GlobalFilter {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         String path = exchange.getRequest().getPath().toString();
 
-        // Permitir chamadas para /auth sem autenticação
-        if (path.startsWith("/auth")) {
+        // Permitir chamadas públicas para /auth/**
+        if (path.matches("^/auth(/.*)?$")) {
             return chain.filter(exchange);
         }
 
@@ -46,8 +46,12 @@ public class JwtAuthenticationFilter implements GlobalFilter {
                 throw new Exception("Token expirado");
             }
 
-            // Pode adicionar claims ao header, se desejar
-            return chain.filter(exchange);
+            // Encaminha o request com o user ID (opcional)
+            ServerWebExchange mutatedExchange = exchange.mutate()
+                .request(builder -> builder.header("X-User-Id", claims.getSubject()))
+                .build();
+
+            return chain.filter(mutatedExchange);
 
         } catch (Exception e) {
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
