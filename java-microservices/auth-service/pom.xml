@@ -49,8 +49,9 @@
     	</dependency>
   </dependencies>
 
-  <build>
+ <build>
     <plugins>
+      <!-- Compilador Java 21 -->
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -58,6 +59,20 @@
         <configuration>
           <release>21</release>
         </configuration>
+      </plugin>
+
+      <!-- Plugin que gera o JAR executável com MANIFEST -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>3.5.3</version>
+        <executions>
+          <execution>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
