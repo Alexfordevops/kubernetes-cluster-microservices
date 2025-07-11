@@ -1,0 +1,117 @@
+version: '3.9'
+services:
+
+  # PostgreSQL para AUTH
+  postgres-auth:
+    image: postgres:15
+    container_name: postgres-auth
+    environment:
+      POSTGRES_DB: authdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+    volumes:
+      - postgres-auth-data:/var/lib/postgresql/data
+    networks:
+      - microservices
+
+  # PostgreSQL para USER
+  postgres-user:
+    image: postgres:15
+    container_name: postgres-user
+    environment:
+      POSTGRES_DB: userdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+    volumes:
+      - postgres-user-data:/var/lib/postgresql/data
+    networks:
+      - microservices
+
+  # PostgreSQL para PRODUCT
+  postgres-product:
+    image: postgres:15
+    container_name: postgres-product
+    environment:
+      POSTGRES_DB: productdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_password
+    volumes:
+      - postgres-product-data:/var/lib/postgresql/data
+    networks:
+      - microservices
+
+  # Auth Service
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8080"
+    environment:
+      SPRING_APPLICATION_NAME: auth-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/authdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres_password
+      JWT_SECRET: mySuperJwtSecret123
+    depends_on:
+      - postgres-auth
+    networks:
+      - microservices
+
+  # User Service
+  user-service:
+    build: ./user-service
+    container_name: user-service
+    ports:
+      - "8082:8080"
+    environment:
+      SPRING_APPLICATION_NAME: user-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-user:5432/userdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres_password
+      JWT_SECRET: mySuperJwtSecret123
+    depends_on:
+      - postgres-user
+    networks:
+      - microservices
+
+  # Product Service
+  product-service:
+    build: ./product-service
+    container_name: product-service
+    ports:
+      - "8083:8080"
+    environment:
+      SPRING_APPLICATION_NAME: product-service
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-product:5432/productdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres_password
+      JWT_SECRET: mySuperJwtSecret123
+    depends_on:
+      - postgres-product
+    networks:
+      - microservices
+
+  # Gateway
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_APPLICATION_NAME: gateway
+      JWT_SECRET: mySuperJwtSecret123
+    depends_on:
+      - auth-service
+      - user-service
+      - product-service
+    networks:
+      - microservices
+
+volumes:
+  postgres-auth-data:
+  postgres-user-data:
+  postgres-product-data:
+
+networks:
+  microservices:
+    driver: bridge
