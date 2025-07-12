@@ -51,7 +51,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-auth:5432/authdb
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres_password
-      JWT_SECRET: mySuperJwtSecret123
+      JWT_SECRET: mySuperSecretKey1234567890123456
     depends_on:
       - postgres-auth
     networks:
@@ -68,7 +68,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-user:5432/userdb
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres_password
-      JWT_SECRET: mySuperJwtSecret123
+      JWT_SECRET: mySuperSecretKey1234567890123456
     depends_on:
       - postgres-user
     networks:
@@ -85,7 +85,7 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-product:5432/productdb
       SPRING_DATASOURCE_USERNAME: postgres
       SPRING_DATASOURCE_PASSWORD: postgres_password
-      JWT_SECRET: mySuperJwtSecret123
+      JWT_SECRET: mySuperSecretKey1234567890123456
     depends_on:
       - postgres-product
     networks:
@@ -99,7 +99,7 @@ services:
       - "8080:8080"
     environment:
       SPRING_APPLICATION_NAME: gateway
-      JWT_SECRET: mySuperJwtSecret123
+      JWT_SECRET: mySuperSecretKey1234567890123456
     depends_on:
       - auth-service
       - user-service
