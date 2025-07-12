@@ -2,6 +2,7 @@ package microservices.gateway.config;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
@@ -37,8 +40,13 @@ public class JwtAuthenticationFilter implements GlobalFilter {
 
         String token = authHeader.substring(7);
         try {
-            Claims claims = Jwts.parser()
-                    .setSigningKey(jwtSecret)
+            // Geração segura da chave
+            SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+
+            Claims claims = Jwts
+                    .parserBuilder()
+                    .setSigningKey(key)
+                    .build()
                     .parseClaimsJws(token)
                     .getBody();
 
@@ -46,10 +54,10 @@ public class JwtAuthenticationFilter implements GlobalFilter {
                 throw new Exception("Token expirado");
             }
 
-            // Encaminha o request com o user ID (opcional)
+            // Adiciona user-id no header (opcional)
             ServerWebExchange mutatedExchange = exchange.mutate()
-                .request(builder -> builder.header("X-User-Id", claims.getSubject()))
-                .build();
+                    .request(builder -> builder.header("X-User-Id", claims.getSubject()))
+                    .build();
 
             return chain.filter(mutatedExchange);
 
