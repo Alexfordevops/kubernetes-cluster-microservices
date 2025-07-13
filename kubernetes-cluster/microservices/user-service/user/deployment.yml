@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: user-container
-          image: meu-repo/user-service:latest
+          image: user-service:latest
           ports:
             - containerPort: 8080
           env:

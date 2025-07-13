@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: product-container
-          image: meu-repo/product-service:latest
+          image: product-service:latest
           ports:
             - containerPort: 8080
           env:
