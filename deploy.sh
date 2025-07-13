@@ -1,30 +1,35 @@
 #!/bin/bash
 
-set -e  # Encerra se algum comando falhar
+set -e
 
-echo "🎯 Usando Docker do Minikube..."
+echo "📦 Iniciando deploy dos microserviços com Minikube..."
+
+# 1. Usar Docker do Minikube
+echo "🎯 Configurando Docker do Minikube..."
 eval $(minikube docker-env)
 
-echo "📦 Buildando imagens..."
-
-SERVICES=("gateway" "auth-service" "user-service" "product-service")
-
+# 2. Build de todas as imagens (Java microservices)
+SERVICES=("auth-service" "user-service" "product-service" "gateway")
 for SERVICE in "${SERVICES[@]}"; do
-  echo "🔨 Buildando $SERVICE..."
-  docker build -t "$SERVICE:latest" "./$SERVICE"
+  echo "🔨 Buildando imagem: $SERVICE..."
+  docker build -t "$SERVICE:latest" "./java-microservices/$SERVICE"
 done
 
-echo "🚀 Aplicando namespace..."
-kubectl apply -f k8s/namespace.yml
+# 3. Aplicar namespace (se existir um)
+NAMESPACE_FILE="./kubernetes-cluster/microservices/namespace.yml"
+if [ -f "$NAMESPACE_FILE" ]; then
+  echo "📁 Aplicando namespace..."
+  kubectl apply -f "$NAMESPACE_FILE"
+fi
 
-echo "🧩 Aplicando recursos dos serviços..."
-
+# 4. Aplicar os manifests Kubernetes
 for SERVICE in "${SERVICES[@]}"; do
-  echo "📄 Aplicando manifests de $SERVICE..."
-  kubectl apply -f "k8s/$SERVICE/"
+  echo "🚀 Aplicando manifestos do serviço: $SERVICE..."
+  kubectl apply -f "./kubernetes-cluster/microservices/$SERVICE"
 done
 
-echo "🌐 Aplicando ingress..."
-kubectl apply -f k8s/ingress.yml
+# 5. Aplicar o ingress do gateway
+echo "🌐 Aplicando Ingress (gateway)..."
+kubectl apply -f "./kubernetes-cluster/microservices/gateway-service/ingress.yml"
 
-echo "✅ Tudo pronto!"
+echo "✅ Deploy finalizado com sucesso!"
