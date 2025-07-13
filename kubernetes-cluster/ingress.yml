@@ -3,32 +3,32 @@ kind: Ingress
 metadata:
   name: microservices-ingress
   namespace: microservices-app
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
 spec:
   ingressClassName: nginx
   rules:
     - host: app.local
       http:
         paths:
-          - path: /auth/(.*)
+          - path: /auth/
             pathType: Prefix
             backend:
               service:
-                name: auth-service
+                name: gateway
                 port:
                   number: 8080
-          - path: /user/(.*)
+
+          - path: /users/
             pathType: Prefix
             backend:
               service:
-                name: user-service
+                name: gateway
                 port:
                   number: 8080
-          - path: /product/(.*)
+
+          - path: /products/
             pathType: Prefix
             backend:
               service:
-                name: product-service
+                name: gateway
                 port:
                   number: 8080
