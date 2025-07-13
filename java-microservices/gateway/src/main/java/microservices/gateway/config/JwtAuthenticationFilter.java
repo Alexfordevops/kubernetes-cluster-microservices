@@ -3,44 +3,48 @@ package microservices.gateway.config;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cloud.gateway.filter.GlobalFilter;
-import org.springframework.cloud.gateway.filter.GatewayFilterChain;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ServerWebExchange;
-import reactor.core.publisher.Mono;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.SecretKey;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
 
 @Component
-public class JwtAuthenticationFilter implements GlobalFilter {
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Value("${jwt.secret}")
     private String jwtSecret;
 
     @Override
-    public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        String path = exchange.getRequest().getPath().toString();
+    protected void doFilterInternal(HttpServletRequest request,
+                                    HttpServletResponse response,
+                                    FilterChain filterChain)
+            throws ServletException, IOException {
 
-        // Permitir chamadas públicas para /auth/**
-        if (path.matches("^/auth(/.*)?$")) {
-            return chain.filter(exchange);
+        String path = request.getRequestURI();
+
+        // Permitir acesso público para /auth/**
+        if (path.startsWith("/auth")) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        String authHeader = request.getHeader("Authorization");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
 
         String token = authHeader.substring(7);
         try {
-            // Geração segura da chave
             SecretKey key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
 
             Claims claims = Jwts
@@ -54,16 +58,13 @@ public class JwtAuthenticationFilter implements GlobalFilter {
                 throw new Exception("Token expirado");
             }
 
-            // Adiciona user-id no header (opcional)
-            ServerWebExchange mutatedExchange = exchange.mutate()
-                    .request(builder -> builder.header("X-User-Id", claims.getSubject()))
-                    .build();
+            // Você pode adicionar atributos ao request se quiser (não headers)
+            request.setAttribute("user-id", claims.getSubject());
 
-            return chain.filter(mutatedExchange);
+            filterChain.doFilter(request, response);
 
         } catch (Exception e) {
-            exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
-            return exchange.getResponse().setComplete();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         }
     }
 }
