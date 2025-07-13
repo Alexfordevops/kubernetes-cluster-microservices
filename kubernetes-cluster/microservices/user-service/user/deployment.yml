@@ -16,6 +16,7 @@ spec:
       containers:
         - name: user-container
           image: user-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:

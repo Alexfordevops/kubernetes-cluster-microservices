@@ -1,20 +1,20 @@
 #!/bin/bash
-
 set -e
 
 echo "📦 Iniciando deploy completo com Minikube..."
 
-# Ativar Docker do Minikube
-echo "🎯 Configurando Docker para usar Minikube..."
+# Ativa o Docker do Minikube
+echo "🎯 Configurando Docker para usar o ambiente do Minikube..."
 eval $(minikube docker-env)
 
-# Lista dos serviços
+# 0. Aplica o namespace antes de tudo
+echo "📁 Aplicando namespace (microservices-app)..."
+kubectl apply -f ./kubernetes-cluster/namespace.yml
+
+# Lista dos microserviços
 SERVICES=("auth-service" "user-service" "product-service" "gateway")
 JAVA_PATH="./java-microservices"
 K8S_PATH="./kubernetes-cluster/microservices"
-
-echo "📁 Aplicando namespace (microservices-app)..."
-kubectl apply -f ./kubernetes-cluster/microservices/namespace.yml
 
 # 1. Build das imagens Docker
 for SERVICE in "${SERVICES[@]}"; do
@@ -22,29 +22,33 @@ for SERVICE in "${SERVICES[@]}"; do
   docker build -t "$SERVICE:latest" "$JAVA_PATH/$SERVICE"
 done
 
-# 2. Aplicar manifests de app e banco de cada serviço
+# 2. Aplicar os YAMLs de database e aplicação
 for SERVICE in "${SERVICES[@]}"; do
-  # Caso especial para gateway
   if [ "$SERVICE" == "gateway" ]; then
     SERVICE_FOLDER="gateway-service"
     APP_FOLDER="gateway"
+    SKIP_DB=true
   else
     SERVICE_FOLDER="$SERVICE"
-    APP_FOLDER="${SERVICE%%-*}"  # auth, user, product
+    APP_FOLDER="${SERVICE%%-*}"
+    SKIP_DB=false
   fi
 
-  APP_MANIFEST="$K8S_PATH/$SERVICE_FOLDER/$APP_FOLDER"
-  DB_MANIFEST="$K8S_PATH/$SERVICE_FOLDER/database"
+  DB_PATH="$K8S_PATH/$SERVICE_FOLDER/database"
+  APP_PATH="$K8S_PATH/$SERVICE_FOLDER/$APP_FOLDER"
 
-  echo "📄 Aplicando manifests do banco de dados de $SERVICE_FOLDER..."
-  kubectl apply -f "$DB_MANIFEST"
+  # Aplica banco de dados (exceto gateway)
+  if [ "$SKIP_DB" = false ]; then
+    echo "📄 Aplicando banco de dados de $SERVICE_FOLDER..."
+    kubectl apply -f "$DB_PATH"
+  fi
 
-  echo "🚀 Aplicando manifests da aplicação $SERVICE_FOLDER..."
-  kubectl apply -f "$APP_MANIFEST"
+  echo "🚀 Aplicando aplicação de $SERVICE_FOLDER..."
+  kubectl apply -f "$APP_PATH"
 done
 
-# 3. Aplicar ingress (caso exista)
-INGRESS_FILE="$K8S_PATH/gateway-service/ingress.yml"
+# 3. Aplica Ingress (novo caminho correto)
+INGRESS_FILE="./kubernetes-cluster/ingress.yml"
 if [ -f "$INGRESS_FILE" ]; then
   echo "🌐 Aplicando Ingress..."
   kubectl apply -f "$INGRESS_FILE"

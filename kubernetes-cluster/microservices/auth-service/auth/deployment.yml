@@ -16,6 +16,7 @@ spec:
       containers:
         - name: auth-container
           image: auth-service:latest # mudar
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           env:
