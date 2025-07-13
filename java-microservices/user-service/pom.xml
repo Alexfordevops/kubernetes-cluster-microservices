@@ -65,6 +65,10 @@
       <version>1.18.32</version> <!-- última versão estável em 2025 -->
       <scope>provided</scope>
     </dependency>
+    <dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
   </dependencies>
 
  <build>
