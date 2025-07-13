@@ -55,13 +55,14 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security</artifactId>
     </dependency>
-  </dependencies>
-  <dependency>
+      <dependency>
     <groupId>jakarta.servlet</groupId>
     <artifactId>jakarta.servlet-api</artifactId>
     <version>6.0.0</version>
     <scope>provided</scope>
 </dependency>
+  </dependencies>
+
 
 
   <dependencyManagement>
